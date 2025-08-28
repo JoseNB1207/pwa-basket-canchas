@@ -97,11 +97,12 @@
     popupAnchor: [0, -32]
   });
 
-  // Datos canchas
+  // Datos canchas en NYC, Bogotá y Madrid (5 canchas por ciudad)
   const canchas = [
+    // NUEVA YORK
     {
       id: 1,
-      nombre: "Cancha Central",
+      nombre: "Cancha Central NYC",
       lat: 40.712776,
       lng: -74.005974,
       calidad: "Alta",
@@ -112,7 +113,7 @@
     },
     {
       id: 2,
-      nombre: "Cancha La Plaza",
+      nombre: "Cancha La Plaza NYC",
       lat: 40.715,
       lng: -74.002,
       calidad: "Media",
@@ -123,7 +124,7 @@
     },
     {
       id: 3,
-      nombre: "Cancha El Bosque",
+      nombre: "Cancha El Bosque NYC",
       lat: 40.709,
       lng: -74.01,
       calidad: "Baja",
@@ -134,7 +135,7 @@
     },
     {
       id: 4,
-      nombre: "Cancha Olímpica",
+      nombre: "Cancha Olímpica NYC",
       lat: 40.716,
       lng: -74.008,
       calidad: "Alta",
@@ -142,27 +143,138 @@
       defectos: [],
       calificacion: 4.9,
       ambiente: "Ambiente excelente, equipos locales juegan a diario"
+    },
+    {
+      id: 5,
+      nombre: "Cancha Riverside NYC",
+      lat: 40.720,
+      lng: -74.015,
+      calidad: "Media",
+      malla: true,
+      defectos: ["Pintura desgastada"],
+      calificacion: 4.1,
+      ambiente: "Ambiente familiar y relajado"
+    },
+
+    // BOGOTÁ
+    {
+      id: 6,
+      nombre: "Cancha Parque Simón Bolívar",
+      lat: 4.667785,
+      lng: -74.095809,
+      calidad: "Alta",
+      malla: true,
+      defectos: [],
+      calificacion: 4.8,
+      ambiente: "Ambiente deportivo activo con juegos frecuentes y torneos locales"
+    },
+    {
+      id: 7,
+      nombre: "Cancha Ciudad Salitre",
+      lat: 4.663451,
+      lng: -74.104675,
+      calidad: "Media",
+      malla: false,
+      defectos: ["Sin malla", "Pintura desgastada"],
+      calificacion: 3.7,
+      ambiente: "Ambiente familiar y tranquilo"
+    },
+    {
+      id: 8,
+      nombre: "Cancha El Campín",
+      lat: 4.669411,
+      lng: -74.095305,
+      calidad: "Alta",
+      malla: true,
+      defectos: [],
+      calificacion: 4.6,
+      ambiente: "Ambiente competitivo con ligas locales"
+    },
+    {
+      id: 9,
+      nombre: "Cancha Parque El Virrey",
+      lat: 4.672228,
+      lng: -74.055464,
+      calidad: "Media",
+      malla: true,
+      defectos: ["Huecos en algunas zonas"],
+      calificacion: 3.9,
+      ambiente: "Ambiente relajado, jugadores recreativos"
+    },
+    {
+      id: 10,
+      nombre: "Cancha Teusaquillo",
+      lat: 4.655376,
+      lng: -74.073497,
+      calidad: "Baja",
+      malla: false,
+      defectos: ["No tiene malla", "Superficie irregular"],
+      calificacion: 2.8,
+      ambiente: "Poco ambiente, cancha usada ocasionalmente"
+    },
+
+    // MADRID
+    {
+      id: 11,
+      nombre: "Cancha Parque La Vaguada",
+      lat: 40.471473,
+      lng: -3.694932,
+      calidad: "Alta",
+      malla: true,
+      defectos: [],
+      calificacion: 4.5,
+      ambiente: "Ambiente excelente, jugadores locales y torneos informales"
+    },
+    {
+      id: 12,
+      nombre: "Cancha El Retiro",
+      lat: 40.413782,
+      lng: -3.684226,
+      calidad: "Alta",
+      malla: true,
+      defectos: [],
+      calificacion: 4.8,
+      ambiente: "Muy buen ambiente, gran afluencia de jugadores jóvenes"
+    },
+    {
+      id: 13,
+      nombre: "Cancha Palacio de los Deportes",
+      lat: 40.421977,
+      lng: -3.679606,
+      calidad: "Alta",
+      malla: true,
+      defectos: [],
+      calificacion: 4.9,
+      ambiente: "Cancha de alto rendimiento, muchos jugadores profesionales"
+    },
+    {
+      id: 14,
+      nombre: "Cancha Madrid Río",
+      lat: 40.407303,
+      lng: -3.713732,
+      calidad: "Media",
+      malla: true,
+      defectos: ["Superficie irregular"],
+      calificacion: 4.2,
+      ambiente: "Ambiente tranquilo y familiar"
+    },
+    {
+      id: 15,
+      nombre: "Cancha Ciudad Lineal",
+      lat: 40.433623,
+      lng: -3.640057,
+      calidad: "Media",
+      malla: false,
+      defectos: ["Piso con grietas"],
+      calificacion: 3.5,
+      ambiente: "Ambiente relajado, pocos jugadores"
     }
   ];
 
-  // Función para calcular distancia en km entre dos puntos lat/lng (Haversine)
-  function distancia(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
   let userMarker = null;
-  let markersLayer = L.layerGroup().addTo(map);
-  let canchasCercanas = [];
+  let markersLayer = null;
 
-  // Mostrar lista de canchas en el contenedor
+  // Mostrar lista de todas las canchas
   function mostrarLista(canchasLista) {
     const listaDiv = document.getElementById('lista-canchas');
     listaDiv.innerHTML = '';
@@ -172,7 +284,6 @@
       canchaDiv.className = 'cancha';
       canchaDiv.innerHTML = `
         <h3>${cancha.nombre}</h3>
-        <p><strong>Distancia:</strong> ${cancha.distancia.toFixed(2)} km</p>
         <p><strong>Calidad:</strong> ${cancha.calidad}</p>
         <p><strong>Malla:</strong> ${cancha.malla ? 'Sí' : '<span class="defecto">No</span>'}</p>
         <p><strong>Defectos:</strong> ${cancha.defectos.length > 0 ? cancha.defectos.map(d => `<span class="defecto">${d}</span>`).join(', ') : 'Ninguno'}</p>
@@ -183,9 +294,13 @@
     });
   }
 
-  // Agrega marcadores al mapa para las canchas pasadas
+  // Agrega marcadores para todas las canchas
   function agregarMarcadores(canchasLista) {
-    markersLayer.clearLayers();
+    if (markersLayer) {
+      markersLayer.clearLayers();
+    } else {
+      markersLayer = L.layerGroup().addTo(map);
+    }
 
     canchasLista.forEach(cancha => {
       const marker = L.marker([cancha.lat, cancha.lng], {icon: canchaIcon});
@@ -206,24 +321,10 @@
     });
   }
 
-  // Muestra las 5 canchas más cercanas al usuario
-  function mostrarCanchasCercanas(userLatLng) {
-    canchas.forEach(c => {
-      c.distancia = distancia(userLatLng.lat, userLatLng.lng, c.lat, c.lng);
-    });
-
-    canchas.sort((a,b) => a.distancia - b.distancia);
-    canchasCercanas = canchas.slice(0, 5);
-
-    mostrarLista(canchasCercanas);
-    agregarMarcadores(canchasCercanas);
-    document.getElementById('volver-lista-btn').style.display = 'none';
-  }
-
-  // Botón volver a la lista completa
+  // Botón para volver a la lista completa
   document.getElementById('volver-lista-btn').addEventListener('click', () => {
-    mostrarLista(canchasCercanas);
-    agregarMarcadores(canchasCercanas);
+    mostrarLista(canchas);
+    agregarMarcadores(canchas);
     document.getElementById('volver-lista-btn').style.display = 'none';
   });
 
@@ -236,14 +337,18 @@
     }
   }
 
-  // Inicialización
-  const map = L.map('map').setView([40.712776, -74.005974], 14);
+  // Inicialización del mapa
+  const map = L.map('map').setView([4.667785, -74.095809], 5); // Zoom bajo para ver ambas ciudades
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
+  // Inicializa ubicación y muestra todas las canchas
   function init() {
+    mostrarLista(canchas);
+    agregarMarcadores(canchas);
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -251,24 +356,16 @@
             lat: pos.coords.latitude,
             lng: pos.coords.longitude
           };
-          map.setView([userLatLng.lat, userLatLng.lng], 15);
           colocarMarcadorUsuario(userLatLng.lat, userLatLng.lng);
-          mostrarCanchasCercanas(userLatLng);
+
+          // Centrar mapa cerca del usuario pero con zoom para ver más canchas
+          map.setView([userLatLng.lat, userLatLng.lng], 12);
         },
         () => {
-          alert("No se pudo obtener tu ubicación. Mostrando canchas por defecto.");
-          const defaultLoc = {lat:40.712776, lng:-74.005974};
-          map.setView([defaultLoc.lat, defaultLoc.lng], 14);
-          colocarMarcadorUsuario(defaultLoc.lat, defaultLoc.lng);
-          mostrarCanchasCercanas(defaultLoc);
+          console.warn("No se pudo obtener tu ubicación. Mostrando mapa con todas las canchas.");
+          // Mantiene vista general
         }
       );
-    } else {
-      alert("Tu navegador no soporta geolocalización. Mostrando canchas por defecto.");
-      const defaultLoc = {lat:40.712776, lng:-74.005974};
-      map.setView([defaultLoc.lat, defaultLoc.lng], 14);
-      colocarMarcadorUsuario(defaultLoc.lat, defaultLoc.lng);
-      mostrarCanchasCercanas(defaultLoc);
     }
   }
 
