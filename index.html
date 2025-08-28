@@ -4,8 +4,17 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Canchas de Baloncesto Cercanas</title>
+
+<!-- Manifest para PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#2c3e50" />
+
+<!-- Leaflet CSS -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -21,8 +30,10 @@
     height: 60vh;
     width: 100%;
   }
-  #lista-canchas {
+  #lista-canchas-container {
     padding: 1rem;
+  }
+  #lista-canchas {
     max-height: 35vh;
     overflow-y: auto;
   }
@@ -32,6 +43,7 @@
     margin-bottom: 1rem;
     padding: 1rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    cursor: default;
   }
   .calificacion {
     color: #f39c12;
@@ -44,12 +56,20 @@
   .defecto {
     color: #e74c3c;
   }
+  #volver-lista-btn {
+    display: none;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #2980b9;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #volver-lista-btn:hover {
+    background-color: #3498db;
+  }
 </style>
-<!-- Leaflet CSS para mapas -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
 </head>
 <body>
 
@@ -59,12 +79,17 @@
 </header>
 
 <div id="map"></div>
-<div id="lista-canchas"></div>
 
-<!-- Leaflet JS para mapas -->
+<div id="lista-canchas-container">
+  <button id="volver-lista-btn">← Volver a la lista completa</button>
+  <div id="lista-canchas"></div>
+</div>
+
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-  // Icono personalizado para canchas
+  // Icono cancha
   const canchaIcon = L.icon({
     iconUrl: 'https://cdn-icons-png.flaticon.com/256/10443/10443831.png',
     iconSize: [32, 32],
@@ -72,7 +97,7 @@
     popupAnchor: [0, -32]
   });
 
-  // Simulación de datos de canchas
+  // Datos canchas
   const canchas = [
     {
       id: 1,
@@ -120,17 +145,9 @@
     }
   ];
 
-  // Crear mapa con Leaflet
-  const map = L.map('map').setView([40.712776, -74.005974], 14);
-
-  // Capa de mapa de OpenStreetMap
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  // Función para calcular distancia en km entre dos coordenadas (Haversine)
+  // Función para calcular distancia en km entre dos puntos lat/lng (Haversine)
   function distancia(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radio Tierra en km
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
@@ -141,7 +158,11 @@
     return R * c;
   }
 
-  // Función para mostrar lista de canchas, recibe array (puede ser solo 1 cancha)
+  let userMarker = null;
+  let markersLayer = L.layerGroup().addTo(map);
+  let canchasCercanas = [];
+
+  // Mostrar lista de canchas en el contenedor
   function mostrarLista(canchasLista) {
     const listaDiv = document.getElementById('lista-canchas');
     listaDiv.innerHTML = '';
@@ -162,29 +183,11 @@
     });
   }
 
-  // Función para mostrar canchas en el mapa y lista
-  function mostrarCanchas(userLatLng) {
-    // Añadir distancia a cada cancha
-    canchas.forEach(c => {
-      c.distancia = distancia(userLatLng.lat, userLatLng.lng, c.lat, c.lng);
-    });
+  // Agrega marcadores al mapa para las canchas pasadas
+  function agregarMarcadores(canchasLista) {
+    markersLayer.clearLayers();
 
-    // Ordenar y sacar las 5 más cercanas
-    canchas.sort((a,b) => a.distancia - b.distancia);
-    const cercanas = canchas.slice(0,5);
-
-    // Mostrar lista inicial con las 5 canchas
-    mostrarLista(cercanas);
-
-    // Limpiar marcadores previos si hay (opcional)
-    if (window.markersLayer) {
-      window.markersLayer.clearLayers();
-    } else {
-      window.markersLayer = L.layerGroup().addTo(map);
-    }
-
-    // Agregar marcadores
-    cercanas.forEach(cancha => {
+    canchasLista.forEach(cancha => {
       const marker = L.marker([cancha.lat, cancha.lng], {icon: canchaIcon});
       marker.bindPopup(`
         <b>${cancha.nombre}</b><br/>
@@ -194,44 +197,93 @@
         Calificación: ${cancha.calificacion} ⭐<br/>
         Ambiente: ${cancha.ambiente}
       `);
-      marker.addTo(window.markersLayer);
+      marker.addTo(markersLayer);
 
-      // Al hacer click en el marcador actualizamos la lista para mostrar solo esa cancha
       marker.on('click', () => {
         mostrarLista([cancha]);
+        document.getElementById('volver-lista-btn').style.display = 'inline-block';
       });
     });
   }
 
-  // Obtener ubicación usuario
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const userLatLng = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        };
-        map.setView([userLatLng.lat, userLatLng.lng], 15);
-        L.marker([userLatLng.lat, userLatLng.lng]).addTo(map).bindPopup("¡Tú estás aquí!").openPopup();
-        mostrarCanchas(userLatLng);
-      },
-      () => {
-        alert("No se pudo obtener tu ubicación. Mostrando canchas por defecto.");
-        mostrarCanchas({lat:40.712776, lng:-74.005974});
-      }
-    );
-  } else {
-    alert("Tu navegador no soporta geolocalización. Mostrando canchas por defecto.");
-    mostrarCanchas({lat:40.712776, lng:-74.005974});
+  // Muestra las 5 canchas más cercanas al usuario
+  function mostrarCanchasCercanas(userLatLng) {
+    canchas.forEach(c => {
+      c.distancia = distancia(userLatLng.lat, userLatLng.lng, c.lat, c.lng);
+    });
+
+    canchas.sort((a,b) => a.distancia - b.distancia);
+    canchasCercanas = canchas.slice(0, 5);
+
+    mostrarLista(canchasCercanas);
+    agregarMarcadores(canchasCercanas);
+    document.getElementById('volver-lista-btn').style.display = 'none';
   }
+
+  // Botón volver a la lista completa
+  document.getElementById('volver-lista-btn').addEventListener('click', () => {
+    mostrarLista(canchasCercanas);
+    agregarMarcadores(canchasCercanas);
+    document.getElementById('volver-lista-btn').style.display = 'none';
+  });
+
+  // Coloca o mueve marcador del usuario
+  function colocarMarcadorUsuario(lat, lng) {
+    if (userMarker) {
+      userMarker.setLatLng([lat, lng]);
+    } else {
+      userMarker = L.marker([lat, lng], {title: 'Tu ubicación'}).addTo(map).bindPopup("¡Tú estás aquí!").openPopup();
+    }
+  }
+
+  // Inicialización
+  const map = L.map('map').setView([40.712776, -74.005974], 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  function init() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const userLatLng = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          };
+          map.setView([userLatLng.lat, userLatLng.lng], 15);
+          colocarMarcadorUsuario(userLatLng.lat, userLatLng.lng);
+          mostrarCanchasCercanas(userLatLng);
+        },
+        () => {
+          alert("No se pudo obtener tu ubicación. Mostrando canchas por defecto.");
+          const defaultLoc = {lat:40.712776, lng:-74.005974};
+          map.setView([defaultLoc.lat, defaultLoc.lng], 14);
+          colocarMarcadorUsuario(defaultLoc.lat, defaultLoc.lng);
+          mostrarCanchasCercanas(defaultLoc);
+        }
+      );
+    } else {
+      alert("Tu navegador no soporta geolocalización. Mostrando canchas por defecto.");
+      const defaultLoc = {lat:40.712776, lng:-74.005974};
+      map.setView([defaultLoc.lat, defaultLoc.lng], 14);
+      colocarMarcadorUsuario(defaultLoc.lat, defaultLoc.lng);
+      mostrarCanchasCercanas(defaultLoc);
+    }
+  }
+
+  init();
 </script>
+
+<!-- Registro Service Worker para PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js').then(reg => {
+      navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => {
         console.log('Service Worker registrado con éxito:', reg.scope);
       }).catch(err => {
-        console.log('Error registrando Service Worker:', err);
+        console.error('Error registrando Service Worker:', err);
       });
     });
   }
